@@ -1,0 +1,1 @@
+自动分析网页告诉你想申请api-key该点哪里，让小白vibe coder不再畏惧申请api
