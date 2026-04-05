@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "API Guide Assistant",
-  "version": "2.0.0",
-  "description": "AI-powered real-time guidance for API registration and setup",
+  "name": "网页引导助手",
+  "version": "3.0.0",
+  "description": "AI-powered conversational guide — tell the assistant what you want to do on any webpage and it will show you exactly where to click.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -27,7 +27,7 @@
     "default_path": "sidepanel.html"
   },
   "action": {
-    "default_title": "API Guide Assistant"
+    "default_title": "网页引导助手"
   },
   "icons": {
     "16": "icons/icon16.png",
