@@ -154,34 +154,47 @@
   }
 
   // Wait for an element matching clickTarget to become visible, then call callback(el).
-  // Uses MutationObserver so it fires immediately when the dropdown opens.
-  function waitForVisible(clickTarget, callback, timeoutMs = 8000) {
-    // Check if already visible right now
+  //
+  // Strategy: click-triggered poll + interval fallback.
+  // Avoids MutationObserver attributeFilter gaps (e.g. GitHub <details open>,
+  // Ant-Design className toggles, etc.) by simply re-running findElement after
+  // every user click and on a slow background interval.
+  function waitForVisible(clickTarget, callback, timeoutMs = 10000) {
+    // Already visible right now?
     const el = findElement(clickTarget, false);
     if (el) { callback(el); return; }
 
-    let settled = false;
+    let done = false;
 
-    function check() {
-      if (settled) return;
+    function tryFind() {
+      if (done) return;
       const found = findElement(clickTarget, false);
       if (found) {
-        settled = true;
-        observer.disconnect();
+        done = true;
+        clearInterval(pollId);
+        document.removeEventListener("click", onAnyClick, true);
         callback(found);
       }
     }
 
-    const observer = new MutationObserver(check);
-    observer.observe(document.body, {
-      childList:       true,
-      subtree:         true,
-      attributes:      true,
-      attributeFilter: ["style", "class", "hidden", "aria-hidden", "aria-expanded", "data-open"]
-    });
+    // Fire after any click — covers virtually all dropdown/popover/dialog opens.
+    // Use capture phase so we see the click before the page's own handlers hide it.
+    function onAnyClick() {
+      setTimeout(tryFind, 160);  // wait for open animation (most complete by ~150ms)
+      setTimeout(tryFind, 450);  // second attempt for slow CSS transitions
+    }
+    document.addEventListener("click", onAnyClick, { capture: true, passive: true });
 
+    // Slow background poll handles programmatic opens, hover menus, etc.
+    const pollId = setInterval(tryFind, 400);
+
+    // Hard timeout — clean up and give up.
     setTimeout(() => {
-      if (!settled) observer.disconnect();
+      if (!done) {
+        done = true;
+        clearInterval(pollId);
+        document.removeEventListener("click", onAnyClick, true);
+      }
     }, timeoutMs);
   }
 
